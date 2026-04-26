@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 7%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 7%;
+    --primary: 245 76% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 245 76% 59%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    background-color: #F5F8FF;
+    color: #1E293B;
+    @apply font-sans;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: #0F172A;
+    @apply font-display;
+  }
+}
+
+@layer utilities {
+  /* gradient text utility */
+  .text-gradient {
+    @apply bg-clip-text text-transparent;
+  }
+
+  /* subtle grid pattern for hero */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgb(37 99 235 / 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(37 99 235 / 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* dot pattern */
+  .bg-dots {
+    background-image: radial-gradient(circle, rgb(37 99 235 / 0.12) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* glassmorphism */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/40;
+  }
+
+  /* thin scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #e2e8f0 transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; height: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 2px;
+  }
+
+  /* shimmer loading */
+  .shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+}

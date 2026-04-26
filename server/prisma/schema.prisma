@@ -1,0 +1,360 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id                 String    @id @default(uuid())
+  name               String
+  slug               String    @unique
+  logoUrl            String?
+  address            String
+  city               String
+  state              String
+  pincode            String
+  phone              String
+  email              String
+  principalName      String
+  isActive           Boolean   @default(true)
+  subscriptionPlan   String    @default("starter")
+  subscriptionExpiry DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  users         User[]
+  students      Student[]
+  notifications Notification[]
+  fees          Fee[]
+  attendance    Attendance[]
+  exams         Exam[]
+  subjects      Subject[]
+  marks         Marks[]
+  gradingScales GradingScale[]
+  auditLogs     AuditLog[]
+
+  @@map("schools")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  schoolId  String
+  name      String
+  email     String   @unique
+  phone     String?
+  password  String
+  role      Role
+  avatarUrl String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school              School         @relation(fields: [schoolId], references: [id])
+  markedAttendance    Attendance[]   @relation("MarkedBy")
+  enteredMarks        Marks[]        @relation("EnteredBy")
+  sentNotifications   Notification[] @relation("SentBy")
+  uploadedDocuments   Document[]     @relation("UploadedBy")
+
+  @@index([schoolId, role])
+  @@map("users")
+}
+
+model Student {
+  id            String        @id @default(uuid())
+  schoolId      String
+  rollNumber    String
+  name          String
+  email         String?
+  phone         String?
+  class         String
+  section       String
+  gender        Gender
+  dateOfBirth   DateTime
+  address       String?
+  parentName    String?
+  parentPhone   String?
+  parentEmail   String?
+  avatarUrl     String?
+  status        StudentStatus @default(ACTIVE)
+  admissionDate DateTime
+  metadata      Json?
+  deletedAt     DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  school        School       @relation(fields: [schoolId], references: [id])
+  attendance    Attendance[]
+  marks         Marks[]
+  fees          Fee[]
+  documents     Document[]
+
+  @@unique([schoolId, rollNumber])
+  @@index([schoolId, class, section])
+  @@map("students")
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  schoolId        String
+  title           String
+  body            String
+  type            NotificationType
+  targetClass     String?
+  targetSection   String?
+  targetStudentId String?
+  sentById        String
+  sentVia         Json
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  school  School @relation(fields: [schoolId], references: [id])
+  sentBy  User   @relation("SentBy", fields: [sentById], references: [id])
+
+  @@index([schoolId])
+  @@map("notifications")
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  schoolId     String
+  studentId    String
+  type         DocumentType
+  status       DocumentStatus @default(PENDING)
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  uploadedById String
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  student    Student @relation(fields: [studentId], references: [id])
+  uploadedBy User    @relation("UploadedBy", fields: [uploadedById], references: [id])
+
+  @@index([schoolId, studentId])
+  @@map("documents")
+}
+
+model Fee {
+  id               String    @id @default(uuid())
+  schoolId         String
+  studentId        String
+  feeType          FeeType
+  description      String
+  amount           Int
+  dueDate          DateTime
+  status           FeeStatus @default(PENDING)
+  paidAmount       Int?
+  paidDate         DateTime?
+  paymentMode      String?
+  paymentReference String?
+  academicYear     String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
+
+  @@index([schoolId, status])
+  @@index([schoolId, studentId])
+  @@map("fees")
+}
+
+model Attendance {
+  id         String           @id @default(uuid())
+  schoolId   String
+  studentId  String
+  date       DateTime         @db.Date
+  status     AttendanceStatus
+  markedById String
+  remarks    String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  school   School  @relation(fields: [schoolId], references: [id])
+  student  Student @relation(fields: [studentId], references: [id])
+  markedBy User    @relation("MarkedBy", fields: [markedById], references: [id])
+
+  @@unique([schoolId, studentId, date])
+  @@index([schoolId, date])
+  @@map("attendance")
+}
+
+model Exam {
+  id           String   @id @default(uuid())
+  schoolId     String
+  name         String
+  examType     ExamType
+  academicYear String
+  class        String
+  startDate    DateTime
+  endDate      DateTime
+  isPublished  Boolean  @default(false)
+  metadata     Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  school  School  @relation(fields: [schoolId], references: [id])
+  marks   Marks[]
+
+  @@index([schoolId, academicYear])
+  @@map("exams")
+}
+
+model Subject {
+  id       String  @id @default(uuid())
+  schoolId String
+  name     String
+  code     String
+  class    String
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School  @relation(fields: [schoolId], references: [id])
+  marks  Marks[]
+
+  @@index([schoolId, class])
+  @@map("subjects")
+}
+
+model Marks {
+  id             String      @id @default(uuid())
+  schoolId       String
+  examId         String
+  studentId      String
+  subjectId      String
+  maxMarks       Int
+  marksObtained  Decimal
+  grade          String?
+  isAbsent       Boolean     @default(false)
+  enteredById    String
+  status         MarksStatus @default(DRAFT)
+  remarks        String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  school    School  @relation(fields: [schoolId], references: [id])
+  exam      Exam    @relation(fields: [examId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id])
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  enteredBy User    @relation("EnteredBy", fields: [enteredById], references: [id])
+
+  @@unique([examId, studentId, subjectId])
+  @@index([schoolId, examId])
+  @@map("marks")
+}
+
+model GradingScale {
+  id        String   @id @default(uuid())
+  schoolId  String
+  name      String
+  bands     Json
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@index([schoolId])
+  @@map("grading_scales")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  schoolId  String
+  userId    String
+  action    String
+  entity    String
+  entityId  String
+  changes   Json?
+  createdAt DateTime @default(now())
+
+  school School @relation(fields: [schoolId], references: [id])
+
+  @@index([schoolId, entity, entityId])
+  @@map("audit_logs")
+}
+
+enum Role {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  TEACHER
+  STUDENT
+  PARENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  ALUMNI
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+}
+
+enum ExamType {
+  UNIT_TEST
+  MID_TERM
+  FINAL
+  PRACTICAL
+  INTERNAL
+}
+
+enum MarksStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum FeeStatus {
+  PAID
+  PENDING
+  OVERDUE
+  PARTIAL
+}
+
+enum FeeType {
+  TUITION
+  TRANSPORT
+  EXAM
+  LIBRARY
+  SPORTS
+  OTHER
+}
+
+enum NotificationType {
+  PERSONAL
+  CLASS
+  BROADCAST
+}
+
+enum DocumentType {
+  BIRTH_CERTIFICATE
+  TRANSFER_CERTIFICATE
+  AADHAR
+  MARKSHEET
+  PHOTO
+  OTHER
+}
+
+enum DocumentStatus {
+  VERIFIED
+  PENDING
+  MISSING
+  REJECTED
+}
